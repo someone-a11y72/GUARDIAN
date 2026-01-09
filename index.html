@@ -156,12 +156,13 @@ function triggerEmergency(){
   hero.innerText="Help is being alerted";
   navigator.vibrate([200,100,200,100,200]);
 }
-
-// -------- SHAKE SENSOR --------
+// ================= REAL SHAKE SYSTEM =================
 let motionEnabled = false;
-let lastShake = 0;
+let shakeCount = 0;
+let lastShakeTime = 0;
+let lastDetected = 0;
 
-// Ask permission on first tap
+// Request motion permission on first user interaction
 document.body.addEventListener("click", () => {
   if (motionEnabled) return;
 
@@ -172,13 +173,13 @@ document.body.addEventListener("click", () => {
         motionEnabled = true;
         console.log("Motion enabled");
       }
-    });
+    }).catch(console.error);
   } else {
     motionEnabled = true; // Android Chrome
   }
 });
 
-// Detect shake
+// Listen to motion
 window.addEventListener("devicemotion", (event) => {
   if (!motionEnabled) return;
 
@@ -187,16 +188,30 @@ window.addEventListener("devicemotion", (event) => {
 
   const strength = Math.abs(a.x) + Math.abs(a.y) + Math.abs(a.z);
 
-  if (strength > 25) {
+  // Only count very strong motion
+  if (strength > 28) {
     const now = Date.now();
-    if (now - lastShake > 1500) {
-      lastShake = now;
-      showConfirm();   // This is your existing "Are you safe?"
+
+    // Cooldown so one shake doesn't trigger multiple times
+    if (now - lastDetected > 300) {
+      shakeCount++;
+      lastDetected = now;
+    }
+
+    // Reset if too slow
+    if (now - lastShakeTime > 2000) {
+      shakeCount = 1;
+    }
+
+    lastShakeTime = now;
+
+    // 3 violent shakes → trigger safety check
+    if (shakeCount >= 3) {
+      shakeCount = 0;
+      showConfirm();  // your existing "Are you safe?"
     }
   }
 });
-
-
 
 </script>
 
