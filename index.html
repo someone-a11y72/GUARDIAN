@@ -48,6 +48,15 @@ button {
 <div id="hero">Your personal emergency shield</div>
 
 <button id="sos">EMERGENCY SOS</button>
+<button id="manage">Emergency Contacts</button>
+
+<div id="contactsBox" style="display:none; padding:20px;">
+  <h3>Emergency Contacts</h3>
+  <input id="cname" placeholder="Name" style="width:90%; padding:10px;"><br><br>
+  <input id="cphone" placeholder="Phone Number" style="width:90%; padding:10px;"><br><br>
+  <button id="addContact">Add</button>
+  <div id="list"></div>
+</div>
 
 <div id="confirmBox">
   <h2>Are you safe?</h2>
@@ -72,6 +81,36 @@ button {
   • Respect that this system is meant to protect lives.
 </div>
 <script>
+ //Emergency contacts 
+const contactsBox = document.getElementById("contactsBox");
+const list = document.getElementById("list");
+
+document.getElementById("manage").onclick = () => {
+  contactsBox.style.display = contactsBox.style.display === "none" ? "block" : "none";
+  showContacts();
+};
+
+document.getElementById("addContact").onclick = () => {
+  const name = document.getElementById("cname").value;
+  const phone = document.getElementById("cphone").value;
+  if(!name || !phone) return alert("Enter name and phone");
+
+  let contacts = JSON.parse(localStorage.getItem("guardianContacts") || "[]");
+  contacts.push({name, phone});
+  localStorage.setItem("guardianContacts", JSON.stringify(contacts));
+  document.getElementById("cname").value="";
+  document.getElementById("cphone").value="";
+  showContacts();
+};
+
+function showContacts(){
+  let contacts = JSON.parse(localStorage.getItem("guardianContacts") || "[]");
+  list.innerHTML = "";
+  contacts.forEach(c=>{
+    list.innerHTML += `<div>${c.name} - ${c.phone}</div>`;
+  });
+}
+  
 const state = document.getElementById("state");
 const hero = document.getElementById("hero");
 const box = document.getElementById("confirmBox");
@@ -154,6 +193,9 @@ function triggerEmergency(){
   state.style.color="red";
   hero.innerText="Help is being alerted";
   navigator.vibrate([200,100,200,100,200]);
+  showContacts();
+  contactsBox.style.display="block";
+
 }
 
 // ---------------- SHAKE SENSOR ----------------
