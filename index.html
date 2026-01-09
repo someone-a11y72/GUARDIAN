@@ -159,7 +159,11 @@ window.addEventListener("devicemotion",e=>{
 });
 
 // -------- Medical --------
-function toggleMedical(){medicalBox.style.display=medicalBox.style.display=="block"?"none":"block";}
+function toggleMedical(){
+  medicalBox.style.display = medicalBox.style.display=="block"?"none":"block";
+  renderMedical();   // refresh every time panel opens
+}
+
 function saveMedical(){
   if(!pname.value||!page.value||!pgender.value||!pblood.value||!pheight.value||!pweight.value){
     alert("Please fill all medical details");
@@ -182,8 +186,8 @@ function saveMedical(){
 function renderMedical(){
   const m = JSON.parse(localStorage.getItem("guardianMedical") || "{}");
 
-  if(!m.name){
-    medicalView.innerHTML = "";
+  if(!m || !m.name){
+    medicalView.innerHTML = "<div style='color:#777'>No medical info saved</div>";
     return;
   }
 
@@ -200,6 +204,7 @@ function renderMedical(){
     </div>
   `;
 }
+
 
 renderMedical();
 function editMedical(){
