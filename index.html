@@ -64,6 +64,8 @@ input,select{width:100%;padding:14px;border-radius:10px;border:none;background:#
   <input id="pheight" placeholder="Height">
   <input id="pweight" placeholder="Weight">
   <button class="saveBtn" onclick="saveMedical()">Save Medical Info</button>
+  <div id="medicalView" style="margin-top:20px;"></div>
+
 </div>
 
 <!-- CONTACTS -->
@@ -157,12 +159,39 @@ window.addEventListener("devicemotion",e=>{
 // -------- Medical --------
 function toggleMedical(){medicalBox.style.display=medicalBox.style.display=="block"?"none":"block";}
 function saveMedical(){
- if(!pname.value||!page.value||!pgender.value||!pblood.value||!pheight.value||!pweight.value){alert("Fill all");return;}
- localStorage.setItem("guardianMedical",JSON.stringify({
-  name:pname.value,age:page.value,gender:pgender.value,blood:pblood.value,height:pheight.value,weight:pweight.value
- }));
- alert("Saved");
+  if(!pname.value||!page.value||!pgender.value||!pblood.value||!pheight.value||!pweight.value){
+    alert("Please fill all medical details");
+    return;
+  }
+
+  const data = {
+    name:pname.value,
+    age:page.value,
+    gender:pgender.value,
+    blood:pblood.value,
+    height:pheight.value,
+    weight:pweight.value
+  };
+
+  localStorage.setItem("guardianMedical", JSON.stringify(data));
+  renderMedical();
+  alert("Medical info updated");
 }
+function renderMedical(){
+  const m = JSON.parse(localStorage.getItem("guardianMedical") || "{}");
+  if(!m.name) return;
+  medicalView.innerHTML = `
+    <div class="badge">
+      <b>${m.name}</b><br>
+      Age: ${m.age} | ${m.gender}<br>
+      Blood: ${m.blood}<br>
+      Height: ${m.height} | Weight: ${m.weight}
+    </div>
+  `;
+}
+renderMedical();
+  
+
 
 // -------- Contacts --------
 function toggleContacts(){contactsBox.style.display=contactsBox.style.display=="block"?"none":"block";showContacts();}
@@ -191,19 +220,29 @@ function del(i){
  localStorage.setItem("guardianContacts",JSON.stringify(c));showContacts();
 }
 
-// -------- Priority Calling --------
 function startPriorityCalling(){
- let c=JSON.parse(localStorage.getItem("guardianContacts")||"[]");
- c.sort((a,b)=>a.priority-b.priority);
- let i=0;
- function call(){
-  if(i>=c.length) return;
-  window.location.href="tel:"+c[i].phone;
-  i++;
-  setTimeout(call,15000);
- }
- call();
+  let contacts = JSON.parse(localStorage.getItem("guardianContacts") || "[]");
+  contacts.sort((a,b)=>a.priority - b.priority);
+
+  let i = 0;
+
+  function callNext(){
+    if(i >= contacts.length){
+      hero.innerText = "Trying contacts again…";
+      i = 0;
+    }
+
+    const c = contacts[i];
+    hero.innerText = "Calling " + c.name + "...";
+    window.location.href = "tel:" + c.phone;
+
+    i++;
+    setTimeout(callNext, 15000);
+  }
+
+  callNext();
 }
+
 </script>
 </body>
 </html>
