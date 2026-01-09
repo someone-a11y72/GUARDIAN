@@ -4,142 +4,176 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>GUARDIAN</title>
 <style>
-body {
-  background: radial-gradient(circle at center, #111, #000);
+   body{
+  margin:0;
+  background:#000;
   color:white;
-  font-family:system-ui;
-  text-align:center;
-  padding-top:40px;
+  font-family:-apple-system,BlinkMacSystemFont,Segoe UI;
 }
-#logo {
-  font-size:36px;
-  letter-spacing:4px;
-  color:#ff4444;
-}
-#state {
-  font-size:48px;
-  margin:30px;
-  font-weight:bold;
-  color:lime;
-}
-#hero {
-  margin-top:20px;
-  font-size:18px;
-  color:#aaa;
-}
-button {
-  font-size:28px;
-  padding:22px;
-  border:none;
-  border-radius:20px;
-  width:85%;
-  margin:12px;
-}
-#sos {background:#ff0000; color:white;}
-#confirmBox {display:none;}
-#yes {background:#00cc44;}
-#no {background:#ff0000;}
-#engine {
-  margin:20px auto;
-  width:90%;
-  padding:20px;
-  background:rgba(255,255,255,0.05);
-  border-radius:20px;
-  border:1px solid rgba(255,255,255,0.1);
-}
-.badge {
-  display:block;
-  background:#222;
-  margin:6px;
-  padding:10px;
-  border-radius:10px;
-  font-size:14px;
-}
-.p1{border-left:5px solid red;}
-.p2{border-left:5px solid orange;}
-.p3{border-left:5px solid yellow;}
-.p4{border-left:5px solid gray;}
 
+#app{
+  max-width:420px;
+  margin:auto;
+  height:100vh;
+  display:flex;
+  flex-direction:column;
+}
 
-  
-</style>
-</head>
-<body>
-<div id="engine">  
-<div id="nav" style="
+#top{
+  padding:18px;
   display:flex;
   justify-content:space-between;
   align-items:center;
-  padding:15px;
+  background:#0b0b0b;
+  border-bottom:1px solid #222;
+}
+
+#logo{
+  color:#ff3b30;
+  font-weight:700;
+  letter-spacing:3px;
+}
+
+#status{
+  text-align:center;
+  margin-top:30px;
+}
+
+#state{
+  font-size:48px;
+  font-weight:800;
+  color:#00ff88;
+}
+
+#hero{
+  color:#999;
+  margin-top:8px;
+}
+
+#sos{
+  margin:40px auto;
+  width:280px;
+  height:280px;
+  border-radius:50%;
+  border:none;
+  background:#ff3b30;
+  color:white;
+  font-size:26px;
+  font-weight:700;
+  box-shadow:0 0 40px rgba(255,59,48,.6);
+}
+
+#confirmBox{
+  position:fixed;
+  inset:0;
+  background:#000;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+}
+
+#confirmBox h2{
+  font-size:32px;
+  margin-bottom:20px;
+}
+
+#confirmBox button{
+  width:240px;
+  padding:18px;
+  margin:10px;
+  border:none;
+  border-radius:14px;
+  font-size:20px;
+}
+
+#yes{background:#00c853;color:black;}
+#no{background:#ff3b30;color:white;}
+
+.panel{
+  position:fixed;
+  inset:0;
+  background:#000;
+  display:none;
+  overflow:auto;
+  padding:20px;
+}
+
+input,select{
+  width:100%;
+  padding:14px;
+  border-radius:10px;
+  border:none;
   background:#111;
-  border-bottom:1px solid #333;
-">
-  <div style="color:#ff4444;font-weight:bold;">GUARDIAN</div>
-  <div>
-    <button onclick="toggleProfile()" style="font-size:14px;">Profile</button>
-    <button onclick="toggleContacts()" style="font-size:14px;">Contacts</button>
+  color:white;
+  margin-bottom:12px;
+}
+
+.badge{
+  background:#111;
+  padding:14px;
+  border-radius:10px;
+  margin-bottom:10px;
+  display:flex;
+  justify-content:space-between;
+}
+
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div id="top">
+    <div id="logo">GUARDIAN</div>
+    <div>
+      <button onclick="toggleProfile()">Profile</button>
+      <button onclick="toggleContacts()">Contacts</button>
+    </div>
   </div>
-</div>
-<div id="profileBox" style="display:none;padding:15px;">
-  <h3>Emergency Profile</h3>
-  <input id="pname" placeholder="Full Name"><br><br>
-  <input id="page" placeholder="Age"><br><br>
-  <input id="pgender" placeholder="Gender"><br><br>
-  <input id="pblood" placeholder="Blood Type"><br><br>
-  <input id="pheight" placeholder="Height"><br><br>
-  <input id="pweight" placeholder="Weight"><br><br>
-  <button onclick="saveProfile()">Save Profile</button>
-</div>
- <div id="topContacts" style="padding:15px;"></div>
- 
 
-<div id="logo">GUARDIAN</div>
-<div id="state">SAFE</div>
-<div id="hero">Your personal emergency shield</div>
+  <div id="status">
+    <div id="state">SAFE</div>
+    <div id="hero">Your personal emergency shield</div>
+  </div>
 
-<button id="sos">EMERGENCY SOS</button>
-<button id="manage">Emergency Contacts</button>
+  <button id="sos">EMERGENCY SOS</button>
 
-<div id="contactsBox" style="display:none; padding:20px;">
-  <h3>Emergency Contacts</h3>
-  <input id="cname" placeholder="Name" style="width:90%; padding:10px;"><br><br>
-  <input id="cphone" placeholder="Phone Number" style="width:90%; padding:10px;"><br><br>
-
-<select id="cpriority" style="width:90%; padding:10px;">
-  <option value="1">Priority 1 (Parents)</option>
-  <option value="2">Priority 2 (Close)</option>
-  <option value="3">Priority 3</option>
-  <option value="4">Priority 4</option>
-</select><br><br>
-
-<button id="addContact">Add Contact</button>
-
-  <div id="list"></div>
 </div>
 
+<!-- CONFIRM -->
 <div id="confirmBox">
   <h2>Are you safe?</h2>
   <button id="yes">YES</button>
   <button id="no">NO</button>
 </div>
-<div style="margin-top:40px; font-size:14px; color:#aaa; padding:20px; line-height:1.5;">
-  <b>How to use GUARDIAN</b><br><br>
 
-  • Tap <b>EMERGENCY SOS</b> or shake your phone or triple-tap the screen to trigger safety mode.<br>
-  • When asked <b>“Are you safe?”</b>, tap <b>NO</b> if you are in danger. Help mode will activate automatically.<br>
-  • If you do nothing for 5 seconds, GUARDIAN will assume danger and activate emergency mode.<br><br>
-
-  <b>Do’s</b><br>
-  • Use GUARDIAN only in real emergency situations.<br>
-  • Keep your phone accessible when going out alone.<br>
-  • Test the system before using it in real life.<br><br>
-
-  <b>Don’ts</b><br>
-  • Do not misuse or create fake alerts.<br>
-  • Do not trigger emergency for fun or jokes.<br>
-  • Respect that this system is meant to protect lives.
+<!-- PROFILE -->
+<div id="profileBox" class="panel">
+  <h2>Emergency Profile</h2>
+  <input id="pname" placeholder="Name">
+  <input id="page" placeholder="Age">
+  <input id="pgender" placeholder="Gender">
+  <input id="pblood" placeholder="Blood Type">
+  <input id="pheight" placeholder="Height">
+  <input id="pweight" placeholder="Weight">
+  <button onclick="saveProfile()">Save</button>
 </div>
-</div>  
+
+<!-- CONTACTS -->
+<div id="contactsBox" class="panel">
+  <h2>Emergency Contacts</h2>
+  <input id="cname" placeholder="Name">
+  <input id="cphone" placeholder="Phone">
+  <select id="cpriority">
+    <option value="1">Priority 1</option>
+    <option value="2">Priority 2</option>
+    <option value="3">Priority 3</option>
+    <option value="4">Priority 4</option>
+  </select>
+  <button id="addContact">Add</button>
+  <div id="list"></div>
+</div>
+
 <script>
  //Emergency contacts 
 const contactsBox = document.getElementById("contactsBox");
