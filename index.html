@@ -64,7 +64,8 @@ input,select{width:100%;padding:14px;border-radius:10px;border:none;background:#
   <input id="pheight" placeholder="Height">
   <input id="pweight" placeholder="Weight">
   <button class="saveBtn" onclick="saveMedical()">Save Medical Info</button>
-  <div id="medicalView" style="margin-top:20px;"></div>
+ <div id="medicalView"></div>
+
 
 </div>
 
@@ -87,6 +88,7 @@ input,select{width:100%;padding:14px;border-radius:10px;border:none;background:#
 <script>
 const state=document.getElementById("state"),hero=document.getElementById("hero"),box=document.getElementById("confirmBox");
 const sos=document.getElementById("sos");
+const medicalView = document.getElementById("medicalView");  
 const yes=document.getElementById("yes"),no=document.getElementById("no");
 
 let timer=null, taps=[], editIndex=null;
@@ -179,17 +181,45 @@ function saveMedical(){
 }
 function renderMedical(){
   const m = JSON.parse(localStorage.getItem("guardianMedical") || "{}");
-  if(!m.name) return;
+
+  if(!m.name){
+    medicalView.innerHTML = "";
+    return;
+  }
+
   medicalView.innerHTML = `
     <div class="badge">
       <b>${m.name}</b><br>
       Age: ${m.age} | ${m.gender}<br>
       Blood: ${m.blood}<br>
       Height: ${m.height} | Weight: ${m.weight}
+      <div style="margin-top:10px;">
+        <button onclick="editMedical()">Edit</button>
+        <button onclick="deleteMedical()">❌</button>
+      </div>
     </div>
   `;
 }
+
 renderMedical();
+function editMedical(){
+  const m = JSON.parse(localStorage.getItem("guardianMedical"));
+  pname.value = m.name;
+  page.value = m.age;
+  pgender.value = m.gender;
+  pblood.value = m.blood;
+  pheight.value = m.height;
+  pweight.value = m.weight;
+}
+
+function deleteMedical(){
+  if(!confirm("Delete medical info?")) return;
+  localStorage.removeItem("guardianMedical");
+  pname.value="";page.value="";pgender.value="";
+  pblood.value="";pheight.value="";pweight.value="";
+  renderMedical();
+}
+  
   
 
 
