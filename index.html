@@ -39,8 +39,6 @@ button {
 #confirmBox {display:none;}
 #yes {background:#00cc44;}
 #no {background:#ff0000;}
-
-  
 </style>
 </head>
 <body>
@@ -56,23 +54,7 @@ button {
   <button id="yes">YES</button>
   <button id="no">NO</button>
 </div>
-<div style="margin-top:40px; font-size:14px; color:#aaa; padding:20px; line-height:1.5;">
-  <b>How to use GUARDIAN</b><br><br>
 
-  • Tap <b>EMERGENCY SOS</b> or shake your phone or triple-tap the screen to trigger safety mode.<br>
-  • When asked <b>“Are you safe?”</b>, tap <b>NO</b> if you are in danger. Help mode will activate automatically.<br>
-  • If you do nothing for 5 seconds, GUARDIAN will assume danger and activate emergency mode.<br><br>
-
-  <b>Do’s</b><br>
-  • Use GUARDIAN only in real emergency situations.<br>
-  • Keep your phone accessible when going out alone.<br>
-  • Test the system before using it in real life.<br><br>
-
-  <b>Don’ts</b><br>
-  • Do not misuse or create fake alerts.<br>
-  • Do not trigger emergency for fun or jokes.<br>
-  • Respect that this system is meant to protect lives.
-</div>
 <script>
 const state = document.getElementById("state");
 const hero = document.getElementById("hero");
@@ -83,19 +65,14 @@ let tapTimes = [];
 let timer = null;
 let count = 5;
 
-// --- TRIGGERS ---
-document.getElementById("sos").onclick = () => {
-  showConfirm();
-};
+// SOS button
+document.getElementById("sos").onclick = () => showConfirm();
 
-// Triple-tap anywhere on screen
-let tapTimes = [];
-let startX = 0;
-let startY = 0;
+// ---------------- TAP vs SCROLL SAFE TRIPLE TAP ----------------
+let startX = 0, startY = 0;
 
 document.addEventListener("touchstart", (e) => {
   if (e.target.tagName === "BUTTON") return;
-
   startX = e.touches[0].clientX;
   startY = e.touches[0].clientY;
 });
@@ -105,25 +82,18 @@ document.addEventListener("touchend", (e) => {
 
   let endX = e.changedTouches[0].clientX;
   let endY = e.changedTouches[0].clientY;
-
-  let dx = Math.abs(endX - startX);
-  let dy = Math.abs(endY - startY);
-
-  // If finger moved more than 15px, it's a scroll, not a tap
-  if (dx > 15 || dy > 15) return;
+  if (Math.abs(endX - startX) > 15 || Math.abs(endY - startY) > 15) return;
 
   let now = Date.now();
   tapTimes.push(now);
   tapTimes = tapTimes.filter(t => now - t < 2000);
-
   if (tapTimes.length >= 3) {
     showConfirm();
     tapTimes = [];
   }
 });
 
-
-// --- CONFIRMATION LOGIC ---
+// ---------------- CONFIRMATION ----------------
 function showConfirm(){
   box.style.display = "block";
   startCountdown();
@@ -137,17 +107,13 @@ function startCountdown(){
   timer = setInterval(() => {
     count--;
     noBtn.innerText = "NO (" + count + ")";
-    if(count <= 0){
-      triggerEmergency();
-    }
+    if(count <= 0) triggerEmergency();
   },1000);
 }
 
 function stopCountdown(){
-  if(timer){
-    clearInterval(timer);
-    timer = null;
-  }
+  if(timer) clearInterval(timer);
+  timer = null;
   noBtn.innerText = "NO";
 }
 
@@ -155,20 +121,16 @@ document.getElementById("yes").onclick = () => {
   stopCountdown();
   box.style.display="none";
   state.innerText="THANK GOD !!";
-  state.style.color="lime";
   hero.innerText="You are safe";
-
   setTimeout(()=>{
     state.innerText="SAFE";
     hero.innerText="Your personal emergency shield";
   },3000);
 };
 
-document.getElementById("no").onclick = () => {
-  triggerEmergency();
-};
+document.getElementById("no").onclick = triggerEmergency;
 
-// --- EMERGENCY ---
+// ---------------- EMERGENCY ----------------
 function triggerEmergency(){
   stopCountdown();
   box.style.display="none";
@@ -177,63 +139,47 @@ function triggerEmergency(){
   hero.innerText="Help is being alerted";
   navigator.vibrate([200,100,200,100,200]);
 }
-// ================= REAL SHAKE SYSTEM =================
-let motionEnabled = false;
-let shakeCount = 0;
-let lastShakeTime = 0;
-let lastDetected = 0;
 
-// Request motion permission on first user interaction
-document.body.addEventListener("click", () => {
-  if (motionEnabled) return;
+// ---------------- SHAKE SENSOR ----------------
+let motionEnabled=false, shakeCount=0, lastShake=0, lastDetected=0;
 
-  if (typeof DeviceMotionEvent !== "undefined" &&
-      typeof DeviceMotionEvent.requestPermission === "function") {
-    DeviceMotionEvent.requestPermission().then(response => {
-      if (response === "granted") {
-        motionEnabled = true;
-        console.log("Motion enabled");
-      }
-    }).catch(console.error);
-  } else {
-    motionEnabled = true; // Android Chrome
-  }
+document.body.addEventListener("click",()=>{
+ if(motionEnabled) return;
+ if(DeviceMotionEvent && DeviceMotionEvent.requestPermission){
+   DeviceMotionEvent.requestPermission().then(r=>{if(r==="granted") motionEnabled=true;});
+ } else motionEnabled=true;
 });
 
-// Listen to motion
-window.addEventListener("devicemotion", (event) => {
-  if (!motionEnabled) return;
-
-  const a = event.accelerationIncludingGravity;
-  if (!a) return;
-
-  const strength = Math.abs(a.x) + Math.abs(a.y) + Math.abs(a.z);
-
-  // Only count very strong motion
-  if (strength > 28) {
-    const now = Date.now();
-
-    // Cooldown so one shake doesn't trigger multiple times
-    if (now - lastDetected > 300) {
-      shakeCount++;
-      lastDetected = now;
-    }
-
-    // Reset if too slow
-    if (now - lastShakeTime > 2000) {
-      shakeCount = 1;
-    }
-
-    lastShakeTime = now;
-
-    // 3 violent shakes → trigger safety check
-    if (shakeCount >= 3) {
-      shakeCount = 0;
-      showConfirm();  // your existing "Are you safe?"
-    }
-  }
+window.addEventListener("devicemotion",(e)=>{
+ if(!motionEnabled) return;
+ const a=e.accelerationIncludingGravity; if(!a) return;
+ const strength=Math.abs(a.x)+Math.abs(a.y)+Math.abs(a.z);
+ if(strength>28){
+  const now=Date.now();
+  if(now-lastDetected>300){ shakeCount++; lastDetected=now; }
+  if(now-lastShake>2000) shakeCount=1;
+  lastShake=now;
+  if(shakeCount>=3){ shakeCount=0; showConfirm(); }
+ }
 });
 
+// ---------------- PHONE SNATCH DETECTION ----------------
+let lastTouch=Date.now(), violentTime=0;
+document.addEventListener("touchstart",()=> lastTouch=Date.now());
+
+window.addEventListener("devicemotion",(e)=>{
+ if(!motionEnabled) return;
+ const a=e.accelerationIncludingGravity; if(!a) return;
+ const strength=Math.abs(a.x)+Math.abs(a.y)+Math.abs(a.z);
+ if(strength>40){
+  violentTime=Date.now();
+  setTimeout(()=>{
+    if(Date.now()-lastTouch>3000 && Date.now()-violentTime<4000){
+      showConfirm();
+    }
+  },3000);
+ }
+});
 </script>
 
 </body>
