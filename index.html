@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GUARDIAN</title>
+<style>
+body {
+  background: radial-gradient(circle at center, #111, #000);
+  color:white;
+  font-family:system-ui;
+  text-align:center;
+  padding-top:40px;
+}
+#logo {
+  font-size:36px;
+  letter-spacing:4px;
+  color:#ff4444;
+}
+#state {
+  font-size:48px;
+  margin:30px;
+  font-weight:bold;
+  color:lime;
+}
+#hero {
+  margin-top:20px;
+  font-size:18px;
+  color:#aaa;
+}
+button {
+  font-size:28px;
+  padding:22px;
+  border:none;
+  border-radius:20px;
+  width:85%;
+  margin:12px;
+}
+#sos {background:#ff0000; color:white;}
+#confirmBox {display:none;}
+#yes {background:#00cc44;}
+#no {background:#ff0000;}
+</style>
+</head>
+<body>
+
+<div id="logo">GUARDIAN</div>
+<div id="state">SAFE</div>
+<div id="hero">Your personal emergency shield</div>
+
+<button id="sos">EMERGENCY SOS</button>
+
+<div id="confirmBox">
+  <h2>Are you safe?</h2>
+  <button id="yes">YES</button>
+  <button id="no">NO</button>
+</div>
+
+<script>
+const state = document.getElementById("state");
+const hero = document.getElementById("hero");
+const box = document.getElementById("confirmBox");
+let safetyTimer = null;
+
+function showConfirm(){
+  box.style.display="block";
+
+  // Start 5 second dead-man timer
+  safetyTimer = setTimeout(()=>{
+    triggerEmergency();
+  },5000);
+}
+
+function clearTimer(){
+  if(safetyTimer){
+    clearTimeout(safetyTimer);
+    safetyTimer = null;
+  }
+}
+
+document.getElementById("sos").onclick = () => {
+  showConfirm();
+};
+
+document.getElementById("yes").onclick = () => {
+  clearTimer();
+  box.style.display="none";
+  state.innerText="THANK GOD !!";
+  state.style.color="lime";
+  hero.innerText="You are safe";
+
+  setTimeout(()=>{
+    state.innerText="SAFE";
+    hero.innerText="Your personal emergency shield";
+  },3000);
+};
+
+document.getElementById("no").onclick = () => {
+  clearTimer();
+  triggerEmergency();
+};
+
+function triggerEmergency(){
+  clearTimer();
+  box.style.display="none";
+  state.innerText="EMERGENCY";
+  state.style.color="red";
+  hero.innerText="Help is being alerted";
+  navigator.vibrate([200,100,200,100,200]);
+}
+</script>
+
+</body>
+</html>
