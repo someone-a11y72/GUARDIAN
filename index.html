@@ -5,7 +5,9 @@
 <title>GUARDIAN</title>
 
 <style>
-body{margin:0;background:#000;color:white;font-family:-apple-system,BlinkMacSystemFont,Segoe UI;}
+body{
+  margin:0;background:#000;color:white;font-family:-apple-system,BlinkMacSystemFont,Segoe UI;
+}
 #app{max-width:420px;margin:auto;height:100vh;display:flex;flex-direction:column;}
 #top{padding:16px;display:flex;justify-content:space-between;align-items:center;background:#0b0b0b;border-bottom:1px solid #222;}
 #logo{color:#ff3b30;font-weight:700;letter-spacing:3px;}
@@ -31,7 +33,7 @@ input,select{width:100%;padding:14px;border-radius:10px;border:none;background:#
   <div id="top">
     <div id="logo">GUARDIAN</div>
     <div>
-      <button onclick="toggleProfile()">Medical Info</button>
+      <button onclick="toggleMedical()">Medical</button>
       <button onclick="toggleContacts()">Contacts</button>
     </div>
   </div>
@@ -44,27 +46,27 @@ input,select{width:100%;padding:14px;border-radius:10px;border:none;background:#
   <button id="sos">EMERGENCY SOS</button>
 </div>
 
-<!-- Confirm -->
+<!-- CONFIRM -->
 <div id="confirmBox">
   <h2>Are you safe?</h2>
   <button id="yes">YES</button>
   <button id="no">NO</button>
 </div>
 
-<!-- Medical -->
-<div id="profileBox" class="panel">
-  <div class="back" onclick="toggleProfile()">← Back</div>
-  <h2>Medical Information</h2>
+<!-- MEDICAL -->
+<div id="medicalBox" class="panel">
+  <div class="back" onclick="toggleMedical()">← Back</div>
+  <h2>Medical Info</h2>
   <input id="pname" placeholder="Name">
   <input id="page" placeholder="Age">
   <input id="pgender" placeholder="Gender">
   <input id="pblood" placeholder="Blood Type">
   <input id="pheight" placeholder="Height">
   <input id="pweight" placeholder="Weight">
-  <button class="saveBtn" onclick="saveProfile()">Save Medical Info</button>
+  <button class="saveBtn" onclick="saveMedical()">Save Medical Info</button>
 </div>
 
-<!-- Contacts -->
+<!-- CONTACTS -->
 <div id="contactsBox" class="panel">
   <div class="back" onclick="toggleContacts()">← Back</div>
   <h2>Emergency Contacts</h2>
@@ -76,38 +78,100 @@ input,select{width:100%;padding:14px;border-radius:10px;border:none;background:#
     <option value="3">Priority 3</option>
     <option value="4">Priority 4</option>
   </select>
-  <button id="addContact" class="primaryBtn">Add Contact</button>
+  <button class="primaryBtn" id="addContact">Add / Update</button>
   <div id="list"></div>
 </div>
 
 <script>
 const state=document.getElementById("state"),hero=document.getElementById("hero"),box=document.getElementById("confirmBox");
-const pname=pname||document.getElementById("pname"),page=document.getElementById("page"),pgender=document.getElementById("pgender"),pblood=document.getElementById("pblood"),pheight=document.getElementById("pheight"),pweight=document.getElementById("pweight");
-const cname=document.getElementById("cname"),cphone=document.getElementById("cphone"),cpriority=document.getElementById("cpriority"),list=document.getElementById("list");
+const sos=document.getElementById("sos");
+const yes=document.getElementById("yes"),no=document.getElementById("no");
 
-document.getElementById("sos").onclick=()=>showConfirm();
-document.getElementById("yes").onclick=()=>{box.style.display="none";state.innerText="SAFE";};
-document.getElementById("no").onclick=triggerEmergency;
+let timer=null, taps=[], editIndex=null;
 
-function showConfirm(){box.style.display="flex";}
-function triggerEmergency(){box.style.display="none";state.innerText="EMERGENCY";state.style.color="red";startPriorityCalling();}
+// -------- SOS --------
+sos.onclick=()=>showConfirm();
 
-function toggleProfile(){profileBox.style.display=profileBox.style.display=="block"?"none":"block";}
-function toggleContacts(){contactsBox.style.display=contactsBox.style.display=="block"?"none":"block";showContacts();}
+// -------- Triple Tap --------
+let sx=0,sy=0;
+document.addEventListener("touchstart",e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY;});
+document.addEventListener("touchend",e=>{
+ let dx=Math.abs(e.changedTouches[0].clientX-sx);
+ let dy=Math.abs(e.changedTouches[0].clientY-sy);
+ if(dx>15||dy>15) return;
+ let now=Date.now();
+ taps.push(now);
+ taps=taps.filter(t=>now-t<2000);
+ if(taps.length>=3){taps=[];showConfirm();}
+});
 
-function saveProfile(){
+// -------- Confirm --------
+function showConfirm(){
+ box.style.display="flex";
+ startTimer();
+ navigator.vibrate(200);
+}
+yes.onclick=()=>{stopTimer();box.style.display="none";state.innerText="SAFE";state.style.color="#00ff88";};
+no.onclick=()=>triggerEmergency();
+
+function startTimer(){
+ let c=5;
+ no.innerText="NO ("+c+")";
+ timer=setInterval(()=>{c--;no.innerText="NO ("+c+")";if(c<=0)triggerEmergency();},1000);
+}
+function stopTimer(){clearInterval(timer);no.innerText="NO";}
+
+// -------- Emergency --------
+function triggerEmergency(){
+ stopTimer();
+ box.style.display="none";
+ state.innerText="EMERGENCY";
+ state.style.color="red";
+ hero.innerText="Calling contacts…";
+ startPriorityCalling();
+}
+
+// -------- Shake + Snatch --------
+let motion=false,lastTouch=Date.now(),lastShake=0,count=0;
+document.body.addEventListener("touchstart",()=>lastTouch=Date.now());
+
+document.body.addEventListener("click",()=>{
+ if(DeviceMotionEvent?.requestPermission){
+  DeviceMotionEvent.requestPermission().then(r=>{if(r=="granted")motion=true;});
+ } else motion=true;
+},{once:true});
+
+window.addEventListener("devicemotion",e=>{
+ if(!motion) return;
+ let a=e.accelerationIncludingGravity;
+ let power=Math.abs(a.x)+Math.abs(a.y)+Math.abs(a.z);
+ if(power>28){
+  let now=Date.now();
+  if(now-lastShake<600)count++; else count=1;
+  lastShake=now;
+  if(count>=3)showConfirm();
+ }
+ if(power>40 && Date.now()-lastTouch>3000) showConfirm();
+});
+
+// -------- Medical --------
+function toggleMedical(){medicalBox.style.display=medicalBox.style.display=="block"?"none":"block";}
+function saveMedical(){
  if(!pname.value||!page.value||!pgender.value||!pblood.value||!pheight.value||!pweight.value){alert("Fill all");return;}
- localStorage.setItem("guardianProfile",JSON.stringify({name:pname.value,age:page.value,gender:pgender.value,blood:pblood.value,height:pheight.value,weight:pweight.value}));
+ localStorage.setItem("guardianMedical",JSON.stringify({
+  name:pname.value,age:page.value,gender:pgender.value,blood:pblood.value,height:pheight.value,weight:pweight.value
+ }));
  alert("Saved");
 }
 
-let editIndex=null;
+// -------- Contacts --------
+function toggleContacts(){contactsBox.style.display=contactsBox.style.display=="block"?"none":"block";showContacts();}
+
 document.getElementById("addContact").onclick=()=>{
  let contacts=JSON.parse(localStorage.getItem("guardianContacts")||"[]");
- if(contacts.some(c=>c.phone==cphone.value)&&editIndex==null){alert("Duplicate");return;}
- let data={name:cname.value,phone:cphone.value,priority:cpriority.value};
- if(editIndex!=null){contacts[editIndex]=data;editIndex=null;}
- else contacts.push(data);
+ if(editIndex==null && contacts.some(c=>c.phone==cphone.value)){alert("Duplicate");return;}
+ let obj={name:cname.value,phone:cphone.value,priority:cpriority.value};
+ if(editIndex!=null){contacts[editIndex]=obj;editIndex=null;} else contacts.push(obj);
  localStorage.setItem("guardianContacts",JSON.stringify(contacts));
  cname.value="";cphone.value="";
  showContacts();
@@ -116,22 +180,30 @@ document.getElementById("addContact").onclick=()=>{
 function showContacts(){
  let contacts=JSON.parse(localStorage.getItem("guardianContacts")||"[]");
  list.innerHTML="";
- contacts.forEach((c,i)=>list.innerHTML+=`<div class="badge">${c.name} - ${c.phone}<span><button onclick="editContact(${i})">Edit</button><button onclick="removeContact(${i})">❌</button></span></div>`);
+ contacts.forEach((c,i)=>list.innerHTML+=`<div class="badge">${c.name} (${c.phone})<span><button onclick="edit(${i})">Edit</button><button onclick="del(${i})">❌</button></span></div>`);
 }
-function editContact(i){
+function edit(i){
  let c=JSON.parse(localStorage.getItem("guardianContacts"))[i];
  cname.value=c.name;cphone.value=c.phone;cpriority.value=c.priority;editIndex=i;
 }
-function removeContact(i){
+function del(i){
  let c=JSON.parse(localStorage.getItem("guardianContacts"));c.splice(i,1);
  localStorage.setItem("guardianContacts",JSON.stringify(c));showContacts();
 }
 
+// -------- Priority Calling --------
 function startPriorityCalling(){
- let contacts=JSON.parse(localStorage.getItem("guardianContacts")||"[]");
- contacts.forEach(c=>window.location.href="tel:"+c.phone);
+ let c=JSON.parse(localStorage.getItem("guardianContacts")||"[]");
+ c.sort((a,b)=>a.priority-b.priority);
+ let i=0;
+ function call(){
+  if(i>=c.length) return;
+  window.location.href="tel:"+c[i].phone;
+  i++;
+  setTimeout(call,15000);
+ }
+ call();
 }
 </script>
-
 </body>
 </html>
