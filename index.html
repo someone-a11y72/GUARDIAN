@@ -89,8 +89,28 @@ document.getElementById("sos").onclick = () => {
 };
 
 // Triple-tap anywhere on screen
+let tapTimes = [];
+let startX = 0;
+let startY = 0;
+
 document.addEventListener("touchstart", (e) => {
   if (e.target.tagName === "BUTTON") return;
+
+  startX = e.touches[0].clientX;
+  startY = e.touches[0].clientY;
+});
+
+document.addEventListener("touchend", (e) => {
+  if (e.target.tagName === "BUTTON") return;
+
+  let endX = e.changedTouches[0].clientX;
+  let endY = e.changedTouches[0].clientY;
+
+  let dx = Math.abs(endX - startX);
+  let dy = Math.abs(endY - startY);
+
+  // If finger moved more than 15px, it's a scroll, not a tap
+  if (dx > 15 || dy > 15) return;
 
   let now = Date.now();
   tapTimes.push(now);
@@ -101,6 +121,7 @@ document.addEventListener("touchstart", (e) => {
     tapTimes = [];
   }
 });
+
 
 // --- CONFIRMATION LOGIC ---
 function showConfirm(){
