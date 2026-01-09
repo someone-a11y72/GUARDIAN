@@ -39,6 +39,8 @@ button {
 #confirmBox {display:none;}
 #yes {background:#00cc44;}
 #no {background:#ff0000;}
+
+  
 </style>
 </head>
 <body>
@@ -54,35 +56,82 @@ button {
   <button id="yes">YES</button>
   <button id="no">NO</button>
 </div>
+<div style="margin-top:40px; font-size:14px; color:#aaa; padding:20px; line-height:1.5;">
+  <b>How to use GUARDIAN</b><br><br>
 
+  • Tap <b>EMERGENCY SOS</b> or shake your phone or triple-tap the screen to trigger safety mode.<br>
+  • When asked <b>“Are you safe?”</b>, tap <b>NO</b> if you are in danger. Help mode will activate automatically.<br>
+  • If you do nothing for 5 seconds, GUARDIAN will assume danger and activate emergency mode.<br><br>
+
+  <b>Do’s</b><br>
+  • Use GUARDIAN only in real emergency situations.<br>
+  • Keep your phone accessible when going out alone.<br>
+  • Test the system before using it in real life.<br><br>
+
+  <b>Don’ts</b><br>
+  • Do not misuse or create fake alerts.<br>
+  • Do not trigger emergency for fun or jokes.<br>
+  • Respect that this system is meant to protect lives.
+</div>
 <script>
 const state = document.getElementById("state");
 const hero = document.getElementById("hero");
 const box = document.getElementById("confirmBox");
-let safetyTimer = null;
+const noBtn = document.getElementById("no");
 
-function showConfirm(){
-  box.style.display="block";
+let tapTimes = [];
+let timer = null;
+let count = 5;
 
-  // Start 5 second dead-man timer
-  safetyTimer = setTimeout(()=>{
-    triggerEmergency();
-  },5000);
-}
-
-function clearTimer(){
-  if(safetyTimer){
-    clearTimeout(safetyTimer);
-    safetyTimer = null;
-  }
-}
-
+// --- TRIGGERS ---
 document.getElementById("sos").onclick = () => {
   showConfirm();
 };
 
+// Triple-tap anywhere on screen
+document.addEventListener("touchstart", (e) => {
+  if (e.target.tagName === "BUTTON") return;
+
+  let now = Date.now();
+  tapTimes.push(now);
+  tapTimes = tapTimes.filter(t => now - t < 2000);
+
+  if (tapTimes.length >= 3) {
+    showConfirm();
+    tapTimes = [];
+  }
+});
+
+// --- CONFIRMATION LOGIC ---
+function showConfirm(){
+  box.style.display = "block";
+  startCountdown();
+  navigator.vibrate(200);
+}
+
+function startCountdown(){
+  stopCountdown();
+  count = 5;
+  noBtn.innerText = "NO (" + count + ")";
+  timer = setInterval(() => {
+    count--;
+    noBtn.innerText = "NO (" + count + ")";
+    if(count <= 0){
+      triggerEmergency();
+    }
+  },1000);
+}
+
+function stopCountdown(){
+  if(timer){
+    clearInterval(timer);
+    timer = null;
+  }
+  noBtn.innerText = "NO";
+}
+
 document.getElementById("yes").onclick = () => {
-  clearTimer();
+  stopCountdown();
   box.style.display="none";
   state.innerText="THANK GOD !!";
   state.style.color="lime";
@@ -95,18 +144,60 @@ document.getElementById("yes").onclick = () => {
 };
 
 document.getElementById("no").onclick = () => {
-  clearTimer();
   triggerEmergency();
 };
 
+// --- EMERGENCY ---
 function triggerEmergency(){
-  clearTimer();
+  stopCountdown();
   box.style.display="none";
   state.innerText="EMERGENCY";
   state.style.color="red";
   hero.innerText="Help is being alerted";
   navigator.vibrate([200,100,200,100,200]);
 }
+
+// -------- SHAKE SENSOR --------
+let motionEnabled = false;
+let lastShake = 0;
+
+// Ask permission on first tap
+document.body.addEventListener("click", () => {
+  if (motionEnabled) return;
+
+  if (typeof DeviceMotionEvent !== "undefined" &&
+      typeof DeviceMotionEvent.requestPermission === "function") {
+    DeviceMotionEvent.requestPermission().then(response => {
+      if (response === "granted") {
+        motionEnabled = true;
+        console.log("Motion enabled");
+      }
+    });
+  } else {
+    motionEnabled = true; // Android Chrome
+  }
+});
+
+// Detect shake
+window.addEventListener("devicemotion", (event) => {
+  if (!motionEnabled) return;
+
+  const a = event.accelerationIncludingGravity;
+  if (!a) return;
+
+  const strength = Math.abs(a.x) + Math.abs(a.y) + Math.abs(a.z);
+
+  if (strength > 25) {
+    const now = Date.now();
+    if (now - lastShake > 1500) {
+      lastShake = now;
+      showConfirm();   // This is your existing "Are you safe?"
+    }
+  }
+});
+
+
+
 </script>
 
 </body>
