@@ -39,9 +39,33 @@ button {
 #confirmBox {display:none;}
 #yes {background:#00cc44;}
 #no {background:#ff0000;}
+#engine {
+  margin:20px auto;
+  width:90%;
+  padding:20px;
+  background:rgba(255,255,255,0.05);
+  border-radius:20px;
+  border:1px solid rgba(255,255,255,0.1);
+}
+.badge {
+  display:block;
+  background:#222;
+  margin:6px;
+  padding:10px;
+  border-radius:10px;
+  font-size:14px;
+}
+.p1{border-left:5px solid red;}
+.p2{border-left:5px solid orange;}
+.p3{border-left:5px solid yellow;}
+.p4{border-left:5px solid gray;}
+
+
+  
 </style>
 </head>
 <body>
+<div id="engine">  
 
 <div id="logo">GUARDIAN</div>
 <div id="state">SAFE</div>
@@ -54,7 +78,16 @@ button {
   <h3>Emergency Contacts</h3>
   <input id="cname" placeholder="Name" style="width:90%; padding:10px;"><br><br>
   <input id="cphone" placeholder="Phone Number" style="width:90%; padding:10px;"><br><br>
-  <button id="addContact">Add</button>
+
+<select id="cpriority" style="width:90%; padding:10px;">
+  <option value="1">Priority 1 (Parents)</option>
+  <option value="2">Priority 2 (Close)</option>
+  <option value="3">Priority 3</option>
+  <option value="4">Priority 4</option>
+</select><br><br>
+
+<button id="addContact">Add Contact</button>
+
   <div id="list"></div>
 </div>
 
@@ -80,6 +113,7 @@ button {
   • Do not trigger emergency for fun or jokes.<br>
   • Respect that this system is meant to protect lives.
 </div>
+</div>  
 <script>
  //Emergency contacts 
 const contactsBox = document.getElementById("contactsBox");
@@ -96,7 +130,9 @@ document.getElementById("addContact").onclick = () => {
   if(!name || !phone) return alert("Enter name and phone");
 
   let contacts = JSON.parse(localStorage.getItem("guardianContacts") || "[]");
-  contacts.push({name, phone});
+ const priority = document.getElementById("cpriority").value;
+contacts.push({name, phone, priority:Number(priority)});
+
   localStorage.setItem("guardianContacts", JSON.stringify(contacts));
   document.getElementById("cname").value="";
   document.getElementById("cphone").value="";
@@ -104,11 +140,17 @@ document.getElementById("addContact").onclick = () => {
 };
 
 function showContacts(){
+function showContacts(){
   let contacts = JSON.parse(localStorage.getItem("guardianContacts") || "[]");
+  contacts.sort((a,b)=>a.priority-b.priority);
   list.innerHTML = "";
   contacts.forEach(c=>{
-    list.innerHTML += `<div>${c.name} - ${c.phone}</div>`;
+    list.innerHTML += `<div class="badge p${c.priority}">
+      ${c.name} - ${c.phone} (P${c.priority})
+    </div>`;
   });
+}
+
 }
   
 const state = document.getElementById("state");
@@ -195,6 +237,8 @@ function triggerEmergency(){
   navigator.vibrate([200,100,200,100,200]);
   showContacts();
   contactsBox.style.display="block";
+  startPriorityCalling();
+
 
 }
 
@@ -238,6 +282,33 @@ window.addEventListener("devicemotion",(e)=>{
   },3000);
  }
 });
+  // ================= PRIORITY CALL ENGINE =================
+function startPriorityCalling(){
+  let contacts = JSON.parse(localStorage.getItem("guardianContacts")||"[]");
+
+  let p1 = contacts.filter(c=>c.priority==1);
+  let p2 = contacts.filter(c=>c.priority==2);
+  let p3 = contacts.filter(c=>c.priority==3);
+  let p4 = contacts.filter(c=>c.priority==4);
+
+  let queue = [];
+
+  // 1 & 2 → 3 rounds
+  for(let i=0;i<3;i++) queue.push(...p1, ...p2);
+
+  // 3 & 4 → 2 rounds
+  for(let i=0;i<2;i++) queue.push(...p3, ...p4);
+
+  dial(queue,0);
+}
+
+function dial(queue,i){
+  if(i>=queue.length) return;
+  hero.innerText = "Calling " + queue[i].name;
+  window.location.href = "tel:" + queue[i].phone;
+  setTimeout(()=> dial(queue,i+1), 15000);
+}
+
 </script>
 
 </body>
