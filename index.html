@@ -53,6 +53,17 @@ input,select{width:100%;padding:14px;border-radius:10px;border:none;background:#
   <button id="no">NO</button>
 </div>
 
+<!-- EMERGENCY VOICE -->
+<div id="voiceBox" class="panel" style="text-align:center;">
+  <h2>Emergency Audio</h2>
+  <p id="voiceStatus">Playing emergency message…</p>
+  <button id="speakBtn" class="primaryBtn">🎤 Speak</button>
+  <button id="muteBtn" class="primaryBtn">🔇 Mute</button>
+</div>
+
+<audio id="panicAudio" src="panic.mp3"></audio>
+  
+
 <!-- MEDICAL -->
 <div id="medicalBox" class="panel">
   <div class="back" onclick="toggleMedical()">← Back</div>
@@ -64,6 +75,13 @@ input,select{width:100%;padding:14px;border-radius:10px;border:none;background:#
   <input id="pheight" placeholder="Height">
   <input id="pweight" placeholder="Weight">
   <button class="saveBtn" onclick="saveMedical()">Save Medical Info</button>
+  <hr style="border-color:#222;margin:20px 0">
+<h3>Emergency Voice</h3>
+<button class="primaryBtn" onclick="startVoiceRecording()">🎙 Record Emergency Message</button>
+<button class="primaryBtn" onclick="playSavedVoice()">▶ Play Test</button>
+<button class="primaryBtn" onclick="deleteSavedVoice()">❌ Delete Recording</button>
+<p id="recordStatus" style="color:#aaa;margin-top:10px;"></p>
+
  <div id="medicalView"></div>
 
 
@@ -84,6 +102,7 @@ input,select{width:100%;padding:14px;border-radius:10px;border:none;background:#
   <button class="primaryBtn" id="addContact">Add / Update</button>
   <div id="list"></div>
 </div>
+  
 
 <script>
 const state=document.getElementById("state"),hero=document.getElementById("hero"),box=document.getElementById("confirmBox");
@@ -133,6 +152,8 @@ function triggerEmergency(){
  state.style.color="red";
  hero.innerText="Calling contacts…";
  startPriorityCalling();
+
+ 
 }
 
 // -------- Shake + Snatch --------
@@ -261,22 +282,125 @@ function startPriorityCalling(){
 
   let i = 0;
 
-  function callNext(){
-    if(i >= contacts.length){
-      hero.innerText = "Trying contacts again…";
-      i = 0;
-    }
-
-    const c = contacts[i];
-    hero.innerText = "Calling " + c.name + "...";
-    window.location.href = "tel:" + c.phone;
-
-    i++;
-    setTimeout(callNext, 15000);
+function callNext(){
+  if(i >= contacts.length){
+    hero.innerText = "Trying contacts again…";
+    i = 0;
   }
+
+  const c = contacts[i];
+  hero.innerText = "Calling " + c.name + "...";
+
+  // 🔥 START EMERGENCY VOICE WHEN CALL STARTS
+  startEmergencyVoice();
+
+  window.location.href = "tel:" + c.phone;
+
+  i++;
+  setTimeout(callNext, 15000);
+}
+
 
   callNext();
 }
+// ===== EMERGENCY VOICE ENGINE (Two-Stage Gate) =====
+const voiceBox = document.getElementById("voiceBox");
+const panicAudio = document.getElementById("panicAudio");
+const voiceStatus = document.getElementById("voiceStatus");
+const speakBtn = document.getElementById("speakBtn");
+const muteBtn = document.getElementById("muteBtn");
+
+let micStream=null;
+let recorder=null;
+let choiceTimer=null;
+let modeChosen=false;
+
+// Called when auto-dial starts
+function startEmergencyVoice(){
+  voiceBox.style.display="block";
+  modeChosen=false;
+  voiceStatus.innerText="Choose audio mode";
+  speakBtn.innerText="🎤 Live Mic";
+  muteBtn.innerText="▶️ Play Message";
+
+  // 3-second auto fallback
+  choiceTimer = setTimeout(()=>{
+    if(!modeChosen){
+      playThenLive();
+    }
+  },3000);
+}
+
+// User chooses LIVE MIC
+speakBtn.onclick = ()=>{
+  modeChosen=true;
+  clearTimeout(choiceTimer);
+  startLiveMic();
+};
+
+// User chooses RECORDED MESSAGE
+muteBtn.onclick = ()=>{
+  modeChosen=true;
+  clearTimeout(choiceTimer);
+  playThenLive();
+};
+
+function playThenLive(){
+  voiceStatus.innerText="▶️ Playing emergency message…";
+  const saved = localStorage.getItem("guardianVoice");
+if(saved) panicAudio.src = saved;
+panicAudio.currentTime=0;
+panicAudio.play();
+
+  panicAudio.onended = ()=> startLiveMic();
+}
+
+function startLiveMic(){
+  voiceStatus.innerText="🎤 Live microphone ON";
+  navigator.mediaDevices.getUserMedia({audio:true}).then(stream=>{
+    micStream=stream;
+    recorder = new MediaRecorder(stream);
+    recorder.start();
+  });
+}
+// ===== PERSONAL EMERGENCY VOICE RECORDER =====
+let voiceRecorder=null;
+let voiceChunks=[];
+
+function startVoiceRecording(){
+  navigator.mediaDevices.getUserMedia({audio:true}).then(stream=>{
+    voiceRecorder = new MediaRecorder(stream);
+    voiceChunks=[];
+    voiceRecorder.start();
+    recordStatus.innerText="Recording... speak your emergency message";
+
+    setTimeout(()=>{
+      voiceRecorder.stop();
+      recordStatus.innerText="Recording saved";
+    },8000);
+
+    voiceRecorder.ondataavailable = e => voiceChunks.push(e.data);
+    voiceRecorder.onstop = ()=>{
+      const blob = new Blob(voiceChunks,{type:"audio/webm"});
+      const reader = new FileReader();
+      reader.onloadend = ()=> localStorage.setItem("guardianVoice", reader.result);
+      reader.readAsDataURL(blob);
+    };
+  });
+}
+
+function playSavedVoice(){
+  const data = localStorage.getItem("guardianVoice");
+  if(!data){alert("No emergency voice recorded");return;}
+  panicAudio.src = data;
+  panicAudio.play();
+}
+
+function deleteSavedVoice(){
+  localStorage.removeItem("guardianVoice");
+  recordStatus.innerText="Recording deleted";
+}
+
 
 </script>
 </body>
