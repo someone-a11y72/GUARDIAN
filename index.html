@@ -25,6 +25,10 @@ input,select{width:100%;padding:14px;border-radius:10px;border:none;background:#
 #confirmBox button{width:240px;padding:18px;margin:10px;border:none;border-radius:14px;font-size:20px;}
 #yes{background:#00c853;color:black;}
 #no{background:#ff3b30;color:white;}
+#recBtn{background:#ff3b30;}
+#playBtn{background:#222;}
+#delBtn{background:#111;color:#ff3b30;}
+  
 </style>
 </head>
 
@@ -75,11 +79,19 @@ input,select{width:100%;padding:14px;border-radius:10px;border:none;background:#
   <input id="pheight" placeholder="Height">
   <input id="pweight" placeholder="Weight">
   <button class="saveBtn" onclick="saveMedical()">Save Medical Info</button>
-  <hr style="border-color:#222;margin:20px 0">
-<h3>Emergency Voice</h3>
-<button class="primaryBtn" onclick="startVoiceRecording()">🎙 Record Emergency Message</button>
-<button class="primaryBtn" onclick="playSavedVoice()">▶ Play Test</button>
-<button class="primaryBtn" onclick="deleteSavedVoice()">❌ Delete Recording</button>
+<div style="margin-top:30px;padding:20px;background:#0b0b0b;border-radius:16px;border:1px solid #222;">
+  <div style="font-size:18px;font-weight:600;margin-bottom:10px;">Emergency Voice Message</div>
+  <div style="font-size:14px;color:#888;margin-bottom:15px;">
+    This message will play automatically when you call for help.
+  </div>
+
+  <button id="recBtn" class="primaryBtn" onclick="startVoiceRecording()">🎙 Record</button>
+  <button id="playBtn" class="primaryBtn" onclick="playSavedVoice()">▶ Play</button>
+  <button id="delBtn" class="primaryBtn" onclick="deleteSavedVoice()">🗑 Delete</button>
+
+  <div id="recordStatus" style="margin-top:12px;font-size:14px;color:#aaa;"></div>
+</div>
+
 <p id="recordStatus" style="color:#aaa;margin-top:10px;"></p>
 
  <div id="medicalView"></div>
