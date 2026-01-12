@@ -58,12 +58,22 @@ input,select{width:100%;padding:14px;border-radius:10px;border:none;background:#
 </div>
 
 <!-- EMERGENCY VOICE -->
-<div id="voiceBox" class="panel" style="text-align:center;">
+<div id="voiceBox" class="panel" style="text-align:center; display:flex; flex-direction:column; gap:20px;">
+
   <h2>Emergency Audio</h2>
   <p id="voiceStatus">Playing emergency message…</p>
   <button id="speakBtn" class="primaryBtn">🎤 Speak</button>
   <button id="muteBtn" class="primaryBtn">🔇 Mute</button>
+
+  <hr style="width:100%; border-color:#222">
+
+  <h2>Live Location</h2>
+  <div id="gpsStatus">Waiting for GPS…</div>
+  <div id="gpsCoords"></div>
+  <a id="mapLink" target="_blank" style="color:#00c853;font-size:18px;"></a>
+
 </div>
+
 <!-- GPS TRACKING -->
 <div id="gpsBox" class="panel">
   <h2>Live Location</h2>
