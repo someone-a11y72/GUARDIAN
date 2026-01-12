@@ -125,6 +125,11 @@ input,select{width:100%;padding:14px;border-radius:10px;border:none;background:#
   
 
 <script>
+const gpsBox = document.getElementById("gpsBox");
+const gpsStatus = document.getElementById("gpsStatus");
+const gpsCoords = document.getElementById("gpsCoords");
+const mapLink = document.getElementById("mapLink");
+  
 const state=document.getElementById("state"),hero=document.getElementById("hero"),box=document.getElementById("confirmBox");
 const sos=document.getElementById("sos");
 const medicalView = document.getElementById("medicalView");  
@@ -172,10 +177,8 @@ function triggerEmergency(){
  state.style.color="red";
  hero.innerText="Calling contacts…";
  startPriorityCalling();
+ startEmergencyVoice();
  startGPSLock();
-
-
- 
 }
 
 // -------- Shake + Snatch --------
@@ -350,7 +353,7 @@ function startEmergencyVoice(){
     if(!modeChosen){
       playThenLive();
     }
-  },3000);
+  },5000);
 }
 
 // User chooses LIVE MIC
