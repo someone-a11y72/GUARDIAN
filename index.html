@@ -64,6 +64,14 @@ input,select{width:100%;padding:14px;border-radius:10px;border:none;background:#
   <button id="speakBtn" class="primaryBtn">🎤 Speak</button>
   <button id="muteBtn" class="primaryBtn">🔇 Mute</button>
 </div>
+<!-- GPS TRACKING -->
+<div id="gpsBox" class="panel">
+  <h2>Live Location</h2>
+  <div id="gpsStatus">Waiting for GPS…</div>
+  <div id="gpsCoords"></div>
+  <a id="mapLink" target="_blank" style="color:#00c853;font-size:18px;"></a>
+</div>
+  
 
 <audio id="panicAudio" src="panic.mp3"></audio>
   
@@ -164,6 +172,8 @@ function triggerEmergency(){
  state.style.color="red";
  hero.innerText="Calling contacts…";
  startPriorityCalling();
+ startGPSLock();
+
 
  
 }
@@ -412,6 +422,93 @@ function deleteSavedVoice(){
   localStorage.removeItem("guardianVoice");
   recordStatus.innerText="Recording deleted";
 }
+// ===== GPS LOCK & LIVE TRACKING =====
+let gpsWatch = null;
+let lastLocation = null;
+
+function startGPSLock(){
+  gpsBox.style.display="block";
+  gpsStatus.innerText="Locking GPS…";
+
+  if(!navigator.geolocation){
+    gpsStatus.innerText="GPS not supported";
+    return;
+  }
+
+  gpsWatch = navigator.geolocation.watchPosition(pos=>{
+    const lat = pos.coords.latitude;
+    const lon = pos.coords.longitude;
+    lastLocation = {lat,lon};
+
+    gpsStatus.innerText="Location Locked";
+    gpsCoords.innerText = lat.toFixed(6) + ", " + lon.toFixed(6);
+
+    mapLink.href = `https://maps.google.com/?q=${lat},${lon}`;
+    mapLink.innerText = "Open in Google Maps";
+
+  }, err=>{
+    gpsStatus.innerText="GPS error";
+  },{
+    enableHighAccuracy:true,
+    maximumAge:0,
+    timeout:10000
+  });
+}
+
+function stopGPSLock(){
+  if(gpsWatch) navigator.geolocation.clearWatch(gpsWatch);
+}
+let gpsTimeout=null;
+
+function startGPSLock(){
+  gpsBox.style.display="block";
+  gpsStatus.innerText="Requesting GPS permission…";
+
+  if(!navigator.geolocation){
+    gpsStatus.innerText="GPS not supported";
+    return;
+  }
+
+  // After 3 seconds, if GPS not locked → fallback
+  gpsTimeout = setTimeout(()=>{
+    if(!lastLocation){
+      gpsStatus.innerText="Using approximate location";
+      getApproxLocation();
+    }
+  },3000);
+
+  gpsWatch = navigator.geolocation.watchPosition(pos=>{
+    clearTimeout(gpsTimeout);
+
+    const lat = pos.coords.latitude;
+    const lon = pos.coords.longitude;
+    lastLocation = {lat,lon};
+
+    gpsStatus.innerText="GPS Locked";
+    gpsCoords.innerText = lat.toFixed(6) + ", " + lon.toFixed(6);
+    mapLink.href = `https://maps.google.com/?q=${lat},${lon}`;
+    mapLink.innerText = "Open in Google Maps";
+  },()=>{
+    gpsStatus.innerText="GPS blocked — using backup";
+    getApproxLocation();
+  },{
+    enableHighAccuracy:true,
+    maximumAge:0,
+    timeout:10000
+  });
+}
+
+function getApproxLocation(){
+  fetch("https://ipapi.co/json/")
+    .then(r=>r.json())
+    .then(d=>{
+      gpsCoords.innerText = d.city + ", " + d.region;
+      mapLink.href = `https://maps.google.com/?q=${d.latitude},${d.longitude}`;
+      mapLink.innerText = "Open approximate location";
+    });
+}
+  
+  
 
 
 </script>
