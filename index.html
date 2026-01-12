@@ -15,6 +15,461 @@ body{
 #state{font-size:48px;font-weight:800;color:#00ff88;}
 #hero{color:#999;margin-top:8px;}
 #sos{margin:40px auto;width:280px;height:280px;border-radius:50%;border:none;background:#ff3b30;color:white;font-size:26px;font-weight:700;box-shadow:0 0 40px rgba(255,59,48,.6);}
+.panel{
+  position:fixed;
+  left:0;
+  right:0;
+  bottom:0;
+  height:55%;
+  background:#000;
+  display:none;
+  overflow:auto;
+  padding:20px;
+  border-top:1px solid #222;
+  z-index:20;
+}
+
+.back{color:#ff3b30;margin-bottom:10px;cursor:pointer;}
+input,select{width:100%;padding:14px;border-radius:10px;border:none;background:#111;color:white;margin-bottom:12px;}
+.primaryBtn{width:100%;padding:16px;font-size:18px;background:#ff3b30;color:white;border:none;border-radius:14px;}
+.saveBtn{width:100%;padding:16px;font-size:18px;background:#00c853;color:black;border:none;border-radius:14px;margin-top:10px;}
+.badge{background:#111;padding:14px;border-radius:10px;margin-bottom:10px;display:flex;justify-content:space-between;}
+#confirmBox{position:fixed;inset:0;background:#000;display:none;align-items:center;justify-content:center;flex-direction:column;}
+#confirmBox button{width:240px;padding:18px;margin:10px;border:none;border-radius:14px;font-size:20px;}
+#yes{background:#00c853;color:black;}
+#no{background:#ff3b30;color:white;}
+#recBtn{background:#ff3b30;}
+#playBtn{background:#222;}
+#delBtn{background:#111;color:#ff3b30;}
+  
+</style>
+</head>
+
+<body>
+<div id="app">
+  <div id="top">
+    <div id="logo">GUARDIAN</div>
+    <div>
+      <button onclick="toggleMedical()">Medical</button>
+      <button onclick="toggleContacts()">Contacts</button>
+    </div>
+  </div>
+
+  <div id="status">
+    <div id="state">SAFE</div>
+    <div id="hero">Your personal emergency shield</div>
+  </div>
+
+  <button id="sos">EMERGENCY SOS</button>
+  <!-- EMERGENCY VOICE -->
+  <div id="voiceBox" class="panel" style="text-align:center; display:flex; flex-direction:column; gap:20px;">
+  <!-- GPS TRACKING -->
+<div id="gpsBox" class="panel">
+  <h2>Live Location</h2>
+  <div id="gpsStatus">Waiting for GPS…</div>
+  <div id="gpsCoords"></div>
+  <a id="mapLink" target="_blank" style="color:#00c853;font-size:18px;"></a>
+</div>  
+</div>
+
+<!-- CONFIRM -->
+<div id="confirmBox">
+  <h2>Are you safe?</h2>
+  <button id="yes">YES</button>
+  <button id="no">NO</button>
+</div>
+
+
+
+
+  <h2>Emergency Audio</h2>
+  <p id="voiceStatus">Playing emergency message…</p>
+  <button id="speakBtn" class="primaryBtn">🎤 Speak</button>
+  <button id="muteBtn" class="primaryBtn">🔇 Mute</button>
+
+  <hr style="width:100%; border-color:#222">
+
+  <h2>Live Location</h2>
+  <div id="gpsStatus">Waiting for GPS…</div>
+  <div id="gpsCoords"></div>
+  <a id="mapLink" target="_blank" style="color:#00c853;font-size:18px;"></a>
+
+</div>
+
+
+  
+
+<audio id="panicAudio" src="panic.mp3"></audio>
+  
+
+<!-- MEDICAL -->
+<div id="medicalBox" class="panel">
+  <div class="back" onclick="toggleMedical()">← Back</div>
+  <h2>Medical Info</h2>
+  <input id="pname" placeholder="Name">
+  <input id="page" placeholder="Age">
+  <input id="pgender" placeholder="Gender">
+  <input id="pblood" placeholder="Blood Type">
+  <input id="pheight" placeholder="Height">
+  <input id="pweight" placeholder="Weight">
+  <button class="saveBtn" onclick="saveMedical()">Save Medical Info</button>
+<div style="margin-top:30px;padding:20px;background:#0b0b0b;border-radius:16px;border:1px solid #222;">
+  <div style="font-size:18px;font-weight:600;margin-bottom:10px;">Emergency Voice Message</div>
+  <div style="font-size:14px;color:#888;margin-bottom:15px;">
+    This message will play automatically when you call for help.
+  </div>
+
+  <button id="recBtn" class="primaryBtn" onclick="startVoiceRecording()">🎙 Record</button>
+  <button id="playBtn" class="primaryBtn" onclick="playSavedVoice()">▶ Play</button>
+  <button id="delBtn" class="primaryBtn" onclick="deleteSavedVoice()">🗑 Delete</button>
+
+  <div id="recordStatus" style="margin-top:12px;font-size:14px;color:#aaa;"></div>
+</div>
+
+<p id="recordStatus" style="color:#aaa;margin-top:10px;"></p>
+
+ <div id="medicalView"></div>
+
+
+</div>
+
+<!-- CONTACTS -->
+<div id="contactsBox" class="panel">
+  <div class="back" onclick="toggleContacts()">← Back</div>
+  <h2>Emergency Contacts</h2>
+  <input id="cname" placeholder="Name">
+  <input id="cphone" placeholder="Phone">
+  <select id="cpriority">
+    <option value="1">Priority 1</option>
+    <option value="2">Priority 2</option>
+    <option value="3">Priority 3</option>
+    <option value="4">Priority 4</option>
+  </select>
+  <button class="primaryBtn" id="addContact">Add / Update</button>
+  <div id="list"></div>
+</div>
+  
+
+<script>
+const gpsBox = document.getElementById("gpsBox");
+const gpsStatus = document.getElementById("gpsStatus");
+const gpsCoords = document.getElementById("gpsCoords");
+const mapLink = document.getElementById("mapLink");
+  
+const state=document.getElementById("state"),hero=document.getElementById("hero"),box=document.getElementById("confirmBox");
+const sos=document.getElementById("sos");
+const medicalView = document.getElementById("medicalView");  
+const yes=document.getElementById("yes"),no=document.getElementById("no");
+
+let timer=null, taps=[], editIndex=null;
+
+// -------- SOS --------
+sos.onclick=()=>showConfirm();
+
+// -------- Triple Tap --------
+let sx=0,sy=0;
+document.addEventListener("touchstart",e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY;});
+document.addEventListener("touchend",e=>{
+ let dx=Math.abs(e.changedTouches[0].clientX-sx);
+ let dy=Math.abs(e.changedTouches[0].clientY-sy);
+ if(dx>15||dy>15) return;
+ let now=Date.now();
+ taps.push(now);
+ taps=taps.filter(t=>now-t<2000);
+ if(taps.length>=3){taps=[];showConfirm();}
+});
+
+// -------- Confirm --------
+function showConfirm(){
+ box.style.display="flex";
+ startTimer();
+ navigator.vibrate(200);
+}
+yes.onclick=()=>{stopTimer();box.style.display="none";state.innerText="SAFE";state.style.color="#00ff88";};
+no.onclick=()=>triggerEmergency();
+
+function startTimer(){
+ let c=5;
+ no.innerText="NO ("+c+")";
+ timer=setInterval(()=>{c--;no.innerText="NO ("+c+")";if(c<=0)triggerEmergency();},1000);
+}
+function stopTimer(){clearInterval(timer);no.innerText="NO";}
+
+// -------- Emergency --------
+function triggerEmergency(){
+ stopTimer();
+ box.style.display="none";
+ state.innerText="EMERGENCY";
+ state.style.color="red";
+ hero.innerText="Sharing location & calling…";
+
+ startPriorityCalling();
+ startEmergencyVoice();
+ startGPSLock();
+}
+
+
+// -------- Shake + Snatch --------
+let motion=false,lastTouch=Date.now(),lastShake=0,count=0;
+document.body.addEventListener("touchstart",()=>lastTouch=Date.now());
+
+document.body.addEventListener("click",()=>{
+ if(DeviceMotionEvent?.requestPermission){
+  DeviceMotionEvent.requestPermission().then(r=>{if(r=="granted")motion=true;});
+ } else motion=true;
+},{once:true});
+
+window.addEventListener("devicemotion",e=>{
+ if(!motion) return;
+ let a=e.accelerationIncludingGravity;
+ let power=Math.abs(a.x)+Math.abs(a.y)+Math.abs(a.z);
+ if(power>28){
+  let now=Date.now();
+  if(now-lastShake<600)count++; else count=1;
+  lastShake=now;
+  if(count>=3)showConfirm();
+ }
+ if(power>40 && Date.now()-lastTouch>3000) showConfirm();
+});
+
+// -------- Medical --------
+function toggleMedical(){
+  medicalBox.style.display = medicalBox.style.display=="block"?"none":"block";
+  renderMedical();   // refresh every time panel opens
+}
+
+function saveMedical(){
+  if(!pname.value||!page.value||!pgender.value||!pblood.value||!pheight.value||!pweight.value){
+    alert("Please fill all medical details");
+    return;
+  }
+
+  const data = {
+    name:pname.value,
+    age:page.value,
+    gender:pgender.value,
+    blood:pblood.value,
+    height:pheight.value,
+    weight:pweight.value
+  };
+
+  localStorage.setItem("guardianMedical", JSON.stringify(data));
+  renderMedical();
+  alert("Medical info updated");
+}
+function renderMedical(){
+  const m = JSON.parse(localStorage.getItem("guardianMedical") || "{}");
+
+  if(!m || !m.name){
+    medicalView.innerHTML = "<div style='color:#777'>No medical info saved</div>";
+    return;
+  }
+
+  medicalView.innerHTML = `
+    <div class="badge">
+      <b>${m.name}</b><br>
+      Age: ${m.age} | ${m.gender}<br>
+      Blood: ${m.blood}<br>
+      Height: ${m.height} | Weight: ${m.weight}
+      <div style="margin-top:10px;">
+        <button onclick="editMedical()">Edit</button>
+        <button onclick="deleteMedical()">❌</button>
+      </div>
+    </div>
+  `;
+}
+
+
+renderMedical();
+function editMedical(){
+  const m = JSON.parse(localStorage.getItem("guardianMedical"));
+  pname.value = m.name;
+  page.value = m.age;
+  pgender.value = m.gender;
+  pblood.value = m.blood;
+  pheight.value = m.height;
+  pweight.value = m.weight;
+}
+
+function deleteMedical(){
+  if(!confirm("Delete medical info?")) return;
+  localStorage.removeItem("guardianMedical");
+  pname.value="";page.value="";pgender.value="";
+  pblood.value="";pheight.value="";pweight.value="";
+  renderMedical();
+}
+  
+  
+
+
+// -------- Contacts --------
+function toggleContacts(){contactsBox.style.display=contactsBox.style.display=="block"?"none":"block";showContacts();}
+
+document.getElementById("addContact").onclick=()=>{
+ let contacts=JSON.parse(localStorage.getItem("guardianContacts")||"[]");
+ if(editIndex==null && contacts.some(c=>c.phone==cphone.value)){alert("Duplicate");return;}
+ let obj={name:cname.value,phone:cphone.value,priority:cpriority.value};
+ if(editIndex!=null){contacts[editIndex]=obj;editIndex=null;} else contacts.push(obj);
+ localStorage.setItem("guardianContacts",JSON.stringify(contacts));
+ cname.value="";cphone.value="";
+ showContacts();
+};
+
+function showContacts(){
+ let contacts=JSON.parse(localStorage.getItem("guardianContacts")||"[]");
+ list.innerHTML="";
+ contacts.forEach((c,i)=>list.innerHTML+=`<div class="badge">${c.name} (${c.phone})<span><button onclick="edit(${i})">Edit</button><button onclick="del(${i})">❌</button></span></div>`);
+}
+function edit(i){
+ let c=JSON.parse(localStorage.getItem("guardianContacts"))[i];
+ cname.value=c.name;cphone.value=c.phone;cpriority.value=c.priority;editIndex=i;
+}
+function del(i){
+ let c=JSON.parse(localStorage.getItem("guardianContacts"));c.splice(i,1);
+ localStorage.setItem("guardianContacts",JSON.stringify(c));showContacts();
+}
+
+function startPriorityCalling(){
+  let contacts = JSON.parse(localStorage.getItem("guardianContacts") || "[]");
+  contacts.sort((a,b)=>a.priority - b.priority);
+
+  let i = 0;
+
+function callNext(){
+  if(i >= contacts.length){
+    hero.innerText = "Trying contacts again…";
+    i = 0;
+  }
+
+  const c = contacts[i];
+  hero.innerText = "Calling " + c.name + "...";
+
+  // 🔥 START EMERGENCY VOICE WHEN CALL STARTS
+  startEmergencyVoice();
+
+  window.location.href = "tel:" + c.phone;
+
+  i++;
+  setTimeout(callNext, 15000);
+}
+
+
+  callNext();
+}
+// ===== EMERGENCY VOICE ENGINE (Two-Stage Gate) =====
+const voiceBox = document.getElementById("voiceBox");
+const panicAudio = document.getElementById("panicAudio");
+const voiceStatus = document.getElementById("voiceStatus");
+const speakBtn = document.getElementById("speakBtn");
+const muteBtn = document.getElementById("muteBtn");
+
+let micStream=null;
+let recorder=null;
+let choiceTimer=null;
+let modeChosen=false;
+
+// Called when auto-dial starts
+function startEmergencyVoice(){
+  voiceBox.style.display="block";
+  modeChosen=false;
+  voiceStatus.innerText="Choose audio mode";
+  speakBtn.innerText="🎤 Live Mic";
+  muteBtn.innerText="▶️ Play Message";
+
+  // 3-second auto fallback
+  choiceTimer = setTimeout(()=>{
+    if(!modeChosen){
+      playThenLive();
+    }
+  },5000);
+}
+
+// User chooses LIVE MIC
+speakBtn.onclick = ()=>{
+  modeChosen=true;
+  clearTimeout(choiceTimer);
+  startLiveMic();
+};
+
+// User chooses RECORDED MESSAGE
+muteBtn.onclick = ()=>{
+  modeChosen=true;
+  clearTimeout(choiceTimer);
+  playThenLive();
+};
+
+function playThenLive(){
+  voiceStatus.innerText="▶️ Playing emergency message…";
+  const saved = localStorage.getItem("guardianVoice");
+if(saved) panicAudio.src = saved;
+panicAudio.currentTime=0;
+panicAudio.play();
+
+  panicAudio.onended = ()=> startLiveMic();
+}
+
+function startLiveMic(){
+  voiceStatus.innerText="🎤 Live microphone ON";
+  navigator.mediaDevices.getUserMedia({audio:true}).then(stream=>{
+    micStream=stream;
+    recorder = new MediaRecorder(stream);
+    recorder.start();
+  });
+}
+// ===== PERSONAL EMERGENCY VOICE RECORDER =====
+let voiceRecorder=null;
+let voiceChunks=[];
+
+function startVoiceRecording(){
+  navigator.mediaDevices.getUserMedia({audio:true}).then(stream=>{
+    voiceRecorder = new MediaRecorder(stream);
+    voiceChunks=[];
+    voiceRecorder.start();
+    recordStatus.innerText="Recording... speak your emergency message";
+
+    setTimeout(()=>{
+      voiceRecorder.stop();
+      recordStatus.innerText="Recording saved";
+    },8000);
+
+    voiceRecorder.ondataavailable = e => voiceChunks.push(e.data);
+    voiceRecorder.onstop = ()=>{
+      const blob = new Blob(voiceChunks,{type:"audio/webm"});
+      const reader = new FileReader();
+      reader.onloadend = ()=> localStorage.setItem("guardianVoice", reader.result);
+      reader.readAsDataURL(blob);
+    };
+  });
+}
+
+function playSavedVoice(){
+  const data = localStorage.getItem("guardianVoice");
+  if(!data){alert("No emergency voice recorded");return;}
+  panicAudio.src = data;
+  panicAudio.play();
+}
+
+function deleteSavedVoice(){
+  localStorage.removeItem("guardianVoice");
+  recordStatus.innerText="Recording deleted";
+}
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GUARDIAN</title>
+
+<style>
+body{
+  margin:0;background:#000;color:white;font-family:-apple-system,BlinkMacSystemFont,Segoe UI;
+}
+#app{max-width:420px;margin:auto;height:100vh;display:flex;flex-direction:column;}
+#top{padding:16px;display:flex;justify-content:space-between;align-items:center;background:#0b0b0b;border-bottom:1px solid #222;}
+#logo{color:#ff3b30;font-weight:700;letter-spacing:3px;}
+#status{text-align:center;margin-top:30px;}
+#state{font-size:48px;font-weight:800;color:#00ff88;}
+#hero{color:#999;margin-top:8px;}
+#sos{margin:40px auto;width:280px;height:280px;border-radius:50%;border:none;background:#ff3b30;color:white;font-size:26px;font-weight:700;box-shadow:0 0 40px rgba(255,59,48,.6);}
 .panel{position:fixed;inset:0;background:#000;display:none;overflow:auto;padding:20px;}
 .back{color:#ff3b30;margin-bottom:10px;cursor:pointer;}
 input,select{width:100%;padding:14px;border-radius:10px;border:none;background:#111;color:white;margin-bottom:12px;}
@@ -435,93 +890,72 @@ function deleteSavedVoice(){
   localStorage.removeItem("guardianVoice");
   recordStatus.innerText="Recording deleted";
 }
-// ===== GPS LOCK & LIVE TRACKING =====
-let gpsWatch = null;
-let lastLocation = null;
+// ===== PROFESSIONAL LOCATION LOCK ENGINE =====
 
 function startGPSLock(){
   gpsBox.style.display="block";
-  gpsStatus.innerText="Locking GPS…";
+  gpsStatus.innerText="🔒 Locking GPS…";
 
-  if(!navigator.geolocation){
-    gpsStatus.innerText="GPS not supported";
-    return;
+  lastLocation = null;
+
+  // 1️⃣ Try high-accuracy device GPS
+  if(navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        setLocation(pos.coords.latitude, pos.coords.longitude, "GPS");
+      },
+      () => {
+        // If GPS blocked or slow → try network
+        startNetworkLocation();
+      },
+      {
+        enableHighAccuracy:true,
+        timeout:5000,
+        maximumAge:0
+      }
+    );
+  } else {
+    startNetworkLocation();
   }
 
-  gpsWatch = navigator.geolocation.watchPosition(pos=>{
-    const lat = pos.coords.latitude;
-    const lon = pos.coords.longitude;
-    lastLocation = {lat,lon};
-
-    gpsStatus.innerText="Location Locked";
-    gpsCoords.innerText = lat.toFixed(6) + ", " + lon.toFixed(6);
-
-    mapLink.href = `https://maps.google.com/?q=${lat},${lon}`;
-    mapLink.innerText = "Open in Google Maps";
-
-  }, err=>{
-    gpsStatus.innerText="GPS error";
-  },{
-    enableHighAccuracy:true,
-    maximumAge:0,
-    timeout:10000
-  });
-}
-
-function stopGPSLock(){
-  if(gpsWatch) navigator.geolocation.clearWatch(gpsWatch);
-}
-let gpsTimeout=null;
-
-function startGPSLock(){
-  gpsBox.style.display="block";
-  gpsStatus.innerText="Requesting GPS permission…";
-
-  if(!navigator.geolocation){
-    gpsStatus.innerText="GPS not supported";
-    return;
-  }
-
-  // After 3 seconds, if GPS not locked → fallback
-  gpsTimeout = setTimeout(()=>{
+  // 3 second fallback
+  setTimeout(()=>{
     if(!lastLocation){
-      gpsStatus.innerText="Using approximate location";
-      getApproxLocation();
+      startNetworkLocation();
     }
   },3000);
-
-  gpsWatch = navigator.geolocation.watchPosition(pos=>{
-    clearTimeout(gpsTimeout);
-
-    const lat = pos.coords.latitude;
-    const lon = pos.coords.longitude;
-    lastLocation = {lat,lon};
-
-    gpsStatus.innerText="GPS Locked";
-    gpsCoords.innerText = lat.toFixed(6) + ", " + lon.toFixed(6);
-    mapLink.href = `https://maps.google.com/?q=${lat},${lon}`;
-    mapLink.innerText = "Open in Google Maps";
-  },()=>{
-    gpsStatus.innerText="GPS blocked — using backup";
-    getApproxLocation();
-  },{
-    enableHighAccuracy:true,
-    maximumAge:0,
-    timeout:10000
-  });
 }
 
-function getApproxLocation(){
+function startNetworkLocation(){
+  gpsStatus.innerText="📡 Using network location…";
+
   fetch("https://ipapi.co/json/")
     .then(r=>r.json())
     .then(d=>{
-      gpsCoords.innerText = d.city + ", " + d.region;
-      mapLink.href = `https://maps.google.com/?q=${d.latitude},${d.longitude}`;
-      mapLink.innerText = "Open approximate location";
-    });
+      if(d.latitude && d.longitude){
+        setLocation(d.latitude, d.longitude, "Network");
+      } else {
+        gpsStatus.innerText="❌ Location unavailable";
+      }
+    })
+    .catch(()=> gpsStatus.innerText="❌ Location failed");
 }
+
+function setLocation(lat, lon, source){
+  lastLocation = {lat,lon};
+
+  gpsStatus.innerText = "📍 Location locked ("+source+")";
+  gpsCoords.innerText = lat.toFixed(6) + ", " + lon.toFixed(6);
+  mapLink.href = `https://maps.google.com/?q=${lat},${lon}`;
+  mapLink.innerText = "Open Live Location";
+}
+
   
-  
+
+
+</script>
+</body>
+</html>
 
 
 </script>
